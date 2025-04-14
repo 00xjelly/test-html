@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StickerMe Creator</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+    }
+    
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    
+    .sticker-creator {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+    }
+    
+    .step {
+      margin-bottom: 40px;
+    }
+    
+    .step-title {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .step-number {
+      background: #667eea;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      font-weight: bold;
+    }
+    
+    .step-name {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    
+    .upload-area {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: #f9f9f9;
+    }
+    
+    .upload-area:hover {
+      border-color: #667eea;
+      background: #f5f7ff;
+    }
+    
+    .upload-area.has-image {
+      padding: 10px;
+    }
+    
+    .upload-area input {
+      display: none;
+    }
+    
+    .upload-placeholder {
+      color: #666;
+    }
+    
+    .upload-placeholder i {
+      font-size: 48px;
+      color: #ccc;
+      margin-bottom: 10px;
+      display: block;
+    }
+    
+    .upload-preview {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 8px;
+    }
+    
+    .styles-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+    
+    .style-option {
+      border: 2px solid #eee;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .style-option:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .style-option.selected {
+      border-color: #667eea;
+      background: #f5f7ff;
+    }
+    
+    .style-option img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 5px;
+      margin-bottom: 8px;
+    }
+    
+    .style-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .style-desc {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .action-button {
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 12px 25px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: inline-block;
+      text-align: center;
+      width: 100%;
+    }
+    
+    .action-button:hover {
+      background: #5a67d8;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .action-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .results-container {
+      margin-top: 20px;
+    }
+    
+    .sticker-results {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .sticker-result {
+      border: 1px solid #eee;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .sticker-result:hover {
+      transform: scale(1.03);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .sticker-result img {
+      width: 100%;
+      display: block;
+    }
+    
+    .loader {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .styles-container {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .sticker-results {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .styles-container {
+        grid-template-columns: 1fr;
+      }
+      
+      .sticker-results {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticker-creator" id="app">
+    <!-- Step 1: Upload Photo -->
+    <div class="step" id="step-upload">
+      <h2>Create Your Custom Sticker Pack</h2>
+      
+      <div class="step-title">
+        <div class="step-number">1</div>
+        <div class="step-name">Upload Your Photo</div>
+      </div>
+      
+      <div class="upload-area" id="upload-area">
+        <input type="file" id="photo-upload" accept="image/*">
+        <div class="upload-placeholder" id="upload-placeholder">
+          <i>📷</i>
+          <p>Click or drop an image here</p>
+          <p style="font-size: 12px; color: #999;">Use a clear photo with good lighting</p>
+        </div>
+        <img id="preview-image" class="upload-preview hidden" src="" alt="Preview">
+      </div>
+    </div>
+    
+    <!-- Step 2: Select Style -->
+    <div class="step" id="step-style">
+      <div class="step-title">
+        <div class="step-number">2</div>
+        <div class="step-name">Choose Animation Style</div>
+      </div>
+      
+      <div class="styles-container">
+        <div class="style-option" data-style="cartoon">
+          <img src="https://via.placeholder.com/150/9C92AC/FFFFFF?text=Cartoon" alt="Cartoon Style">
+          <div class="style-name">Cartoon</div>
+          <div class="style-desc">Fun, playful cartoon animations</div>
+        </div>
+        
+        <div class="style-option" data-style="watercolor">
+          <img src="https://via.placeholder.com/150/9C6AAC/FFFFFF?text=Watercolor" alt="Watercolor Style">
+          <div class="style-name">Watercolor</div>
+          <div class="style-desc">Artistic watercolor effect</div>
+        </div>
+        
+        <div class="style-option" data-style="retro">
+          <img src="https://via.placeholder.com/150/AC926A/FFFFFF?text=Retro" alt="Retro Style">
+          <div class="style-name">Retro</div>
+          <div class="style-desc">Vintage, old-school vibe</div>
+        </div>
+        
+        <div class="style-option" data-style="neon">
+          <img src="https://via.placeholder.com/150/6AAC92/FFFFFF?text=Neon" alt="Neon Style">
+          <div class="style-name">Neon</div>
+          <div class="style-desc">Vibrant, glowing neon effect</div>
+        </div>
+        
+        <div class="style-option" data-style="minimal">
+          <img src="https://via.placeholder.com/150/AC6A6A/FFFFFF?text=Minimal" alt="Minimal Style">
+          <div class="style-name">Minimal</div>
+          <div class="style-desc">Clean, simple line animations</div>
+        </div>
+        
+        <div class="style-option" data-style="pixel">
+          <img src="https://via.placeholder.com/150/6A6AAC/FFFFFF?text=Pixel" alt="Pixel Style">
+          <div class="style-name">Pixel</div>
+          <div class="style-desc">Retro pixel art animations</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Generate Button -->
+    <button id="generate-button" class="action-button" disabled>Create My Stickers</button>
+    
+    <!-- Loading State -->
+    <div class="loader" id="loader">
+      <div class="spinner"></div>
+      <p>Creating your animated stickers...</p>
+      <p>This may take up to a minute</p>
+    </div>
+    
+    <!-- Results Section -->
+    <div class="results-container hidden" id="results-container">
+      <h2>Your Custom Stickers</h2>
+      
+      <div class="sticker-results" id="sticker-results">
+        <!-- Results will be populated here -->
+      </div>
+      
+      <button id="add-to-cart-button" class="action-button">Add to Cart - $14.99</button>
+      <button id="start-over-button" class="action-button" style="background: #f3f4f6; color: #374151; margin-top: 10px;">Start Over</button>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Elements
+      const uploadArea = document.getElementById('upload-area');
+      const fileInput = document.getElementById('photo-upload');
+      const previewImage = document.getElementById('preview-image');
+      const uploadPlaceholder = document.getElementById('upload-placeholder');
+      const styleOptions = document.querySelectorAll('.style-option');
+      const generateButton = document.getElementById('generate-button');
+      const loader = document.getElementById('loader');
+      const resultsContainer = document.getElementById('results-container');
+      const stickerResults = document.getElementById('sticker-results');
+      const addToCartButton = document.getElementById('add-to-cart-button');
+      const startOverButton = document.getElementById('start-over-button');
+      
+      // State
+      let selectedFile = null;
+      let selectedStyle = null;
+      let generatedStickers = [];
+      
+      // API endpoint (will need to be replaced with your actual serverless function URL)
+      const API_ENDPOINT = 'https://your-serverless-function-url.com/generate-stickers';
+      
+      // Handle file upload area
+      uploadArea.addEventListener('click', () => {
+        fileInput.click();
+      });
+      
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#667eea';
+      });
+      
+      uploadArea.addEventListener('dragleave', () => {
+        uploadArea.style.borderColor = '#ccc';
+      });
+      
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.borderColor = '#ccc';
+        
+        if (e.dataTransfer.files.length) {
+          handleFileSelect(e.dataTransfer.files[0]);
+        }
+      });
+      
+      fileInput.addEventListener('change', () => {
+        if (fileInput.files.length) {
+          handleFileSelect(fileInput.files[0]);
+        }
+      });
+      
+      // Handle file selection
+      function handleFileSelect(file) {
+        if (!file.type.match('image.*')) {
+          alert('Please select an image file (JPEG, PNG).');
+          return;
+        }
+        
+        selectedFile = file;
+        
+        // Show image preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          previewImage.src = e.target.result;
+          previewImage.classList.remove('hidden');
+          uploadPlaceholder.classList.add('hidden');
+          uploadArea.classList.add('has-image');
+        };
+        reader.readAsDataURL(file);
+        
+        updateGenerateButton();
+      }
+      
+      // Handle style selection
+      styleOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          // Remove selected class from all options
+          styleOptions.forEach(o => o.classList.remove('selected'));
+          
+          // Add selected class to clicked option
+          option.classList.add('selected');
+          
+          // Store selected style
+          selectedStyle = option.getAttribute('data-style');
+          
+          updateGenerateButton();
+        });
+      });
+      
+      // Update generate button state
+      function updateGenerateButton() {
+        generateButton.disabled = !(selectedFile && selectedStyle);
+      }
+      
+      // Handle generate button click
+      generateButton.addEventListener('click', async () => {
+        if (!selectedFile || !selectedStyle) return;
+        
+        // Show loading state
+        loader.style.display = 'block';
+        generateButton.style.display = 'none';
+        
+        // In a real implementation, this would call your serverless function
+        // For demo purposes, we'll simulate the API call with a timeout
+        simulateAPICall(selectedFile, selectedStyle);
+      });
+      
+      // Simulate API call (replace with actual API call in production)
+      function simulateAPICall(file, style) {
+        // Convert file to base64 for sending to API
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          const base64Image = reader.result.split(',')[1];
+          
+          // In a real implementation, send this to your serverless function
+          // For now, we'll simulate a response after a delay
+          setTimeout(() => {
+            // Simulate generated stickers (in production, these would come from your API)
+            // Using placeholder images for demonstration
+            const demoResults = [
+              `https://via.placeholder.com/300/9C92AC/FFFFFF?text=Sticker+1+(${style})`,
+              `https://via.placeholder.com/300/9C92AC/FFFFFF?text=Sticker+2+(${style})`,
+              `https://via.placeholder.com/300/9C92AC/FFFFFF?text=Sticker+3+(${style})`,
+              `https://via.placeholder.com/300/9C92AC/FFFFFF?text=Sticker+4+(${style})`,
+              `https://via.placeholder.com/300/9C92AC/FFFFFF?text=Sticker+5+(${style})`,
+              `https://via.placeholder.com/300/9C92AC/FFFFFF?text=Sticker+6+(${style})`
+            ];
+            
+            handleAPIResponse(demoResults);
+          }, 3000);
+        };
+      }
+      
+      // Handle API response
+      function handleAPIResponse(stickerUrls) {
+        // Hide loader
+        loader.style.display = 'none';
+        
+        // Store generated stickers
+        generatedStickers = stickerUrls;
+        
+        // Display results
+        displayResults(stickerUrls);
+        
+        // Show results container
+        resultsContainer.classList.remove('hidden');
+      }
+      
+      // Display results
+      function displayResults(stickerUrls) {
+        stickerResults.innerHTML = '';
+        
+        stickerUrls.forEach(url => {
+          const stickerElement = document.createElement('div');
+          stickerElement.className = 'sticker-result';
+          
+          const imgElement = document.createElement('img');
+          imgElement.src = url;
+          imgElement.alt = 'Animated Sticker';
+          
+          stickerElement.appendChild(imgElement);
+          stickerResults.appendChild(stickerElement);
+        });
+      }
+      
+      // Add to cart button
+      addToCartButton.addEventListener('click', () => {
+        // In a real implementation, this would add the product to the Wix cart
+        // We need to store the sticker URLs in a custom field
+        
+        // For demonstration, we'll just show an alert
+        alert('In the real implementation, this would add your custom sticker pack to cart with the generated images.');
+        
+        // This is where you'd integrate with Wix - in production code:
+        // 1. Convert the sticker URLs to a format Wix can store
+        // 2. Use the Wix SDK to add the product to cart with custom fields
+        // 3. Redirect to cart or show confirmation
+        
+        // Example of what this might look like with Wix's SDK:
+        /*
+        window.parent.postMessage({
+          type: 'add-to-cart',
+          productId: 'your-sticker-product-id',
+          options: {
+            stickerUrls: generatedStickers.join(',')
+          },
+          quantity: 1
+        }, '*');
+        */
+      });
+      
+      // Start over button
+      startOverButton.addEventListener('click', () => {
+        // Reset state
+        selectedFile = null;
+        selectedStyle = null;
+        generatedStickers = [];
+        
+        // Reset UI
+        previewImage.src = '';
+        previewImage.classList.add('hidden');
+        uploadPlaceholder.classList.remove('hidden');
+        uploadArea.classList.remove('has-image');
+        
+        styleOptions.forEach(o => o.classList.remove('selected'));
+        
+        // Reset buttons
+        generateButton.disabled = true;
+        generateButton.style.display = 'block';
+        
+        // Hide results
+        resultsContainer.classList.add('hidden');
+      });
+    });
+  </script>
+</body>
+</html>
